@@ -3,12 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { 
-  Play, 
-  Pause, 
-  SkipForward, 
-  SkipBack, 
-  RotateCcw, 
+import {
+  Play,
+  Pause,
+  SkipForward,
+  SkipBack,
+  RotateCcw,
   Shuffle,
   PlayCircle
 } from 'lucide-react';
@@ -49,47 +49,69 @@ export const ControlPanel = ({
 
   const handleArraySubmit = () => {
     try {
-      const arr = inputValue
+      const parts = inputValue
         .split(',')
         .map(s => s.trim())
-        .filter(s => s !== '')
-        .map(s => {
-          const num = parseInt(s, 10);
-          if (isNaN(num) || num < 0) {
-            throw new Error(`Invalid number: ${s}`);
-          }
+        .filter(s => s !== '');
+
+      if (parts.length === 0) {
+        throw new Error('Please enter at least one item');
+      }
+
+      if (parts.length > 20) {
+        throw new Error('Maximum 20 items allowed for visualization');
+      }
+
+      // Try to parse all as numbers first
+      const allNumbers = parts.every(p => !isNaN(parseFloat(p)) && isFinite(Number(p)));
+
+      if (allNumbers) {
+        const numArr = parts.map(p => {
+          const num = Number(p);
+          if (num > 9999) throw new Error('Numbers must be less than 10000');
           return num;
         });
-
-      if (arr.length === 0) {
-        throw new Error('Please enter at least one number');
+        setError('');
+        onSetArray(numArr);
+      } else {
+        // Treat as strings
+        const strArr = parts;
+        if (strArr.some(s => s.length > 4)) {
+          throw new Error('Strings must be 4 characters or less');
+        }
+        setError('');
+        onSetArray(strArr as any); // Type assertion needed or update prop type
       }
-
-      if (arr.length > 20) {
-        throw new Error('Maximum 20 numbers allowed for visualization');
-      }
-
-      if (arr.some(n => n > 9999)) {
-        throw new Error('Numbers must be less than 10000');
-      }
-
-      setError('');
-      onSetArray(arr);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Invalid input');
     }
   };
 
   const handleGenerateRandom = () => {
-    const count = Math.floor(Math.random() * 6) + 5; // 5-10 numbers
-    const maxValue = Math.random() > 0.5 ? 999 : 99; // Mix of 2 and 3 digit numbers
-    const arr = Array.from({ length: count }, () => 
-      Math.floor(Math.random() * maxValue) + 1
-    );
-    const newValue = arr.join(', ');
-    setInputValue(newValue);
-    setError('');
-    onSetArray(arr);
+    const isString = Math.random() > 0.5;
+    const count = Math.floor(Math.random() * 6) + 5; // 5-10 items
+
+    if (!isString) {
+      const maxValue = Math.random() > 0.5 ? 999 : 99; // Mix of 2 and 3 digit numbers
+      const arr = Array.from({ length: count }, () =>
+        Math.floor(Math.random() * maxValue) + 1
+      );
+      const newValue = arr.join(', ');
+      setInputValue(newValue);
+      setError('');
+      onSetArray(arr);
+    } else {
+      // Generate random strings
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const arr = Array.from({ length: count }, () => {
+        const len = Math.floor(Math.random() * 3) + 2; // 2-4 chars
+        return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      });
+      const newValue = arr.join(', ');
+      setInputValue(newValue);
+      setError('');
+      onSetArray(arr as any);
+    }
   };
 
   // Convert speed to a display value (inverted for slider)
@@ -121,16 +143,16 @@ export const ControlPanel = ({
           <p className="text-xs text-destructive">{error}</p>
         )}
         <div className="flex gap-2">
-          <Button 
-            onClick={handleArraySubmit} 
+          <Button
+            onClick={handleArraySubmit}
             variant="secondary"
             size="sm"
             className="flex-1"
           >
             Set Array
           </Button>
-          <Button 
-            onClick={handleGenerateRandom} 
+          <Button
+            onClick={handleGenerateRandom}
             variant="outline"
             size="sm"
             className="flex-1"
@@ -144,11 +166,11 @@ export const ControlPanel = ({
       {/* Playback Controls */}
       <div className="space-y-3">
         <Label className="text-sm font-medium">Playback</Label>
-        
+
         <div className="grid grid-cols-2 gap-2">
           {!hasStarted ? (
-            <Button 
-              onClick={onStart} 
+            <Button
+              onClick={onStart}
               className="col-span-2"
               size="lg"
             >

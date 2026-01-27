@@ -25,10 +25,12 @@ export const RadixSortVisualizer = () => {
 
   const displayArray = currentStep?.array || state.currentArray;
   const displayBuckets = currentStep?.buckets || [];
-  const maxValue = Math.max(...state.originalArray, 1);
+  const maxValue = state.originalArray.length > 0
+    ? Math.max(...state.originalArray.map(v => typeof v === 'number' ? v : String(v).length * 10)) // Simple heuristic for string height
+    : 1;
 
-  const currentDigit = currentStep?.phase === 'distribute' 
-    ? displayArray.find(el => el.isActive)?.currentDigit ?? null 
+  const currentDigit = currentStep?.phase === 'distribute'
+    ? displayArray.find(el => el.isActive)?.currentDigit ?? null
     : null;
 
   return (
@@ -44,7 +46,7 @@ export const RadixSortVisualizer = () => {
             Radix Sort Visualizer
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            An interactive visualization of LSD (Least Significant Digit) Radix Sort. 
+            An interactive visualization of LSD (Least Significant Digit) Radix Sort.
             Watch how elements are distributed into buckets based on each digit position.
           </p>
         </motion.header>
@@ -99,7 +101,7 @@ export const RadixSortVisualizer = () => {
                   </motion.span>
                 )}
               </div>
-              
+
               <div className="flex items-end justify-center gap-2 min-h-[220px] overflow-x-auto py-4">
                 <AnimatePresence mode="popLayout">
                   {displayArray.map((element, index) => (
@@ -124,34 +126,30 @@ export const RadixSortVisualizer = () => {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">
-                  Digit Buckets (0-9)
+                  Buckets
                 </h2>
                 {currentStep?.phase === 'distribute' && (
                   <span className="text-sm text-muted-foreground">
-                    Distributing by <span className="font-medium text-accent capitalize">{currentStep.digitName}</span> digit
+                    Distributing by <span className="font-medium text-accent capitalize">{currentStep.digitName}</span>
                   </span>
                 )}
               </div>
 
-              <div className="flex justify-center gap-3 overflow-x-auto py-4">
-                {displayBuckets.map((bucket) => (
-                  <BucketContainer
-                    key={bucket.digit}
-                    bucket={bucket}
-                    isActive={currentDigit === bucket.digit}
-                  />
-                ))}
-                {displayBuckets.length === 0 && (
-                  <div className="flex gap-3">
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
-                      <BucketContainer
-                        key={digit}
-                        bucket={{ digit, elements: [] }}
-                        isActive={false}
-                      />
-                    ))}
-                  </div>
-                )}
+              <div className="flex justify-center gap-3 overflow-x-auto py-4 min-h-[140px]">
+                <AnimatePresence mode="popLayout">
+                  {displayBuckets.map((bucket) => (
+                    <BucketContainer
+                      key={bucket.key}
+                      bucket={bucket}
+                      isActive={currentDigit === bucket.key}
+                    />
+                  ))}
+                  {displayBuckets.length === 0 && (
+                    <div className="flex items-center justify-center w-full text-muted-foreground">
+                      Waiting to start...
+                    </div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </div>

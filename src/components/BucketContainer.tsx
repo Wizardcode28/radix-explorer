@@ -32,28 +32,38 @@ const bucketLabelClasses: Record<number, string> = {
   9: 'bg-bucket-9',
 };
 
+const getBucketColorIndex = (key: string | number): number => {
+  if (typeof key === 'number') return key % 10;
+  // Simple hash for strings to pick a color 0-9
+  let hash = 0;
+  const str = String(key);
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return Math.abs(hash) % 10;
+};
+
 export const BucketContainer = ({ bucket, isActive }: BucketContainerProps) => {
+  const colorIndex = getBucketColorIndex(bucket.key);
+
   return (
     <motion.div
-      className={`flex flex-col items-center transition-all duration-300 ${
-        isActive ? 'scale-105' : ''
-      }`}
+      className={`flex flex-col items-center transition-all duration-300 ${isActive ? 'scale-105' : ''
+        }`}
       animate={{ scale: isActive ? 1.05 : 1 }}
     >
       {/* Bucket label */}
-      <div 
-        className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md mb-2 ${
-          bucketLabelClasses[bucket.digit]
-        }`}
+      <div
+        className={`px-3 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md mb-2 ${bucketLabelClasses[colorIndex]
+          }`}
       >
-        {bucket.digit}
+        {bucket.label}
       </div>
-      
+
       {/* Bucket container */}
       <div
-        className={`min-w-[50px] min-h-[100px] border-2 border-dashed rounded-lg p-2 flex flex-col-reverse items-center gap-1 transition-all duration-300 ${
-          bucketColorClasses[bucket.digit]
-        } ${isActive ? 'border-solid shadow-md' : ''}`}
+        className={`min-w-[50px] min-h-[100px] border-2 border-dashed rounded-lg p-2 flex flex-col-reverse items-center gap-1 transition-all duration-300 ${bucketColorClasses[colorIndex]
+          } ${isActive ? 'border-solid shadow-md' : ''}`}
       >
         <AnimatePresence mode="popLayout">
           {bucket.elements.map((element, idx) => (
@@ -63,20 +73,19 @@ export const BucketContainer = ({ bucket, isActive }: BucketContainerProps) => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.8 }}
               transition={{ duration: 0.3, delay: idx * 0.05 }}
-              className={`w-10 h-8 rounded flex items-center justify-center text-white font-mono text-xs font-medium shadow-sm ${
-                bucketLabelClasses[bucket.digit]
-              }`}
+              className={`w-10 h-8 rounded flex items-center justify-center text-white font-mono text-xs font-medium shadow-sm overflow-hidden ${bucketLabelClasses[colorIndex]
+                }`}
             >
               {element.value}
             </motion.div>
           ))}
         </AnimatePresence>
-        
+
         {bucket.elements.length === 0 && (
           <span className="text-muted-foreground/50 text-xs">empty</span>
         )}
       </div>
-      
+
       {/* Count badge */}
       {bucket.elements.length > 0 && (
         <motion.span

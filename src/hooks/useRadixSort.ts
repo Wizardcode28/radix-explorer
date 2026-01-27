@@ -1,36 +1,55 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { ArrayElement, Bucket, SortStep, RadixSortState } from '@/types/radixSort';
 
-const getDigitName = (position: number): string => {
-  const names = ['units', 'tens', 'hundreds', 'thousands', 'ten-thousands'];
-  return names[position] || `10^${position}`;
+const getDigitName = (position: number, isString: boolean): string => {
+  if (!isString) {
+    const names = ['units', 'tens', 'hundreds', 'thousands', 'ten-thousands'];
+    return names[position] || `10^${position}`;
+  }
+  return position === 0 ? 'last char' : `${position + 1}th last char`;
 };
 
-const getDigit = (num: number, position: number): number => {
-  return Math.floor(num / Math.pow(10, position)) % 10;
+const getDigit = (val: number | string, position: number, isString: boolean): string | number => {
+  if (isString) {
+    const str = String(val);
+    // For LSD string sort, we look from right to left
+    // position 0 = last char, position 1 = 2nd last char, etc.
+    const index = str.length - 1 - position;
+    if (index < 0) return ''; // Padding for shorter strings
+    return str[index];
+  }
+  return Math.floor((val as number) / Math.pow(10, position)) % 10;
 };
 
-const getMaxDigits = (arr: number[]): number => {
+const getMaxDigits = (arr: (number | string)[]): number => {
   if (arr.length === 0) return 1;
-  const max = Math.max(...arr);
+  // Check if we're sorting strings or numbers based on the first element
+  const isString = typeof arr[0] === 'string' || (typeof arr[0] === 'number' && arr.some(x => typeof x === 'string'));
+
+  if (isString) {
+    return Math.max(...arr.map(x => String(x).length));
+  }
+
+  const max = Math.max(...(arr as number[]));
   return max === 0 ? 1 : Math.floor(Math.log10(max)) + 1;
 };
 
-const createArrayElement = (value: number, index: number): ArrayElement => ({
+const createArrayElement = (value: number | string, index: number): ArrayElement => ({
   value,
   id: `${value}-${index}-${Date.now()}-${Math.random()}`,
   isActive: false,
   currentDigit: null,
 });
 
-const createEmptyBuckets = (): Bucket[] => {
-  return Array.from({ length: 10 }, (_, i) => ({
-    digit: i,
+const createEmptyBuckets = (keys: (string | number)[]): Bucket[] => {
+  return keys.map(k => ({
+    key: k,
+    label: k === '' ? 'Empty' : String(k),
     elements: [],
   }));
 };
 
-export const useRadixSort = (initialArray: number[] = [170, 45, 75, 90, 802, 24, 2, 66]) => {
+export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 90, 802, 24, 2, 66]) => {
   const [state, setState] = useState<RadixSortState>(() => ({
     originalArray: initialArray,
     currentArray: initialArray.map(createArrayElement),
@@ -43,32 +62,38 @@ export const useRadixSort = (initialArray: number[] = [170, 45, 75, 90, 802, 24,
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const generateSteps = useCallback((arr: number[]): SortStep[] => {
+  const generateSteps = useCallback((arr: (number | string)[]): SortStep[] => {
     const steps: SortStep[] = [];
     const maxDigits = getMaxDigits(arr);
     let currentElements = arr.map(createArrayElement);
+    const isStringMode = arr.some(x => typeof x === 'string');
 
     // Initial step
     steps.push({
       phase: 'initial',
       digitPosition: 0,
-      digitName: getDigitName(0),
+      digitName: 'Start',
       array: currentElements.map(el => ({ ...el })),
-      buckets: createEmptyBuckets(),
+      buckets: [],
       currentElementIndex: null,
       explanation: 'Initial array ready for sorting',
-      detailedExplanation: `We have ${arr.length} numbers to sort. The largest number has ${maxDigits} digit(s), so we'll process ${maxDigits} digit position(s) from right to left (units → tens → hundreds...).`,
+      detailedExplanation: `We have ${arr.length} items to sort. The maximum length is ${maxDigits}, so we'll process ${maxDigits} positions from right to left.`,
     });
 
     for (let digitPos = 0; digitPos < maxDigits; digitPos++) {
-      const digitName = getDigitName(digitPos);
-      let buckets = createEmptyBuckets();
+      const digitName = getDigitName(digitPos, isStringMode);
+
+      // Determine unique keys for buckets at this position
+      const currentDigits = currentElements.map(el => getDigit(el.value, digitPos, isStringMode));
+      const uniqueDigits = Array.from(new Set(currentDigits)).sort();
+
+      let buckets = createEmptyBuckets(uniqueDigits);
 
       // Distribution phase - one step per element
       for (let i = 0; i < currentElements.length; i++) {
         const element = currentElements[i];
-        const digit = getDigit(element.value, digitPos);
-        
+        const digit = getDigit(element.value, digitPos, isStringMode);
+
         // Create a snapshot showing current element being processed
         const snapshotArray = currentElements.map((el, idx) => ({
           ...el,
@@ -81,11 +106,14 @@ export const useRadixSort = (initialArray: number[] = [170, 45, 75, 90, 802, 24,
           ...b,
           elements: [...b.elements],
         }));
-        newBuckets[digit].elements.push({
-          ...element,
-          isActive: true,
-          currentDigit: digit,
-        });
+        const targetBucketIndex = newBuckets.findIndex(b => b.key === digit);
+        if (targetBucketIndex !== -1) {
+          newBuckets[targetBucketIndex].elements.push({
+            ...element,
+            isActive: true,
+            currentDigit: digit,
+          });
+        }
 
         steps.push({
           phase: 'distribute',
@@ -94,8 +122,8 @@ export const useRadixSort = (initialArray: number[] = [170, 45, 75, 90, 802, 24,
           array: snapshotArray,
           buckets: newBuckets,
           currentElementIndex: i,
-          explanation: `Moving ${element.value} to bucket ${digit}`,
-          detailedExplanation: `Looking at the ${digitName} digit of ${element.value}: The digit is ${digit}, so we place ${element.value} into bucket ${digit}. This maintains the relative order from previous passes (stability).`,
+          explanation: `Moving "${element.value}" to bucket "${digit === '' ? 'Empty' : digit}"`,
+          detailedExplanation: `Looking at the ${digitName} of "${element.value}": The value is "${digit}", so we place it into the corresponding bucket.`,
         });
 
         buckets = newBuckets;
@@ -103,8 +131,8 @@ export const useRadixSort = (initialArray: number[] = [170, 45, 75, 90, 802, 24,
 
       // Collect phase - gather all elements from buckets
       const collectedElements: ArrayElement[] = [];
-      for (let d = 0; d < 10; d++) {
-        for (const el of buckets[d].elements) {
+      for (const bucket of buckets) {
+        for (const el of bucket.elements) {
           collectedElements.push({
             ...el,
             isActive: false,
@@ -120,10 +148,10 @@ export const useRadixSort = (initialArray: number[] = [170, 45, 75, 90, 802, 24,
         digitPosition: digitPos,
         digitName,
         array: collectedElements.map(el => ({ ...el })),
-        buckets: createEmptyBuckets(),
+        buckets: createEmptyBuckets(uniqueDigits), // Show empty buckets after collection
         currentElementIndex: null,
         explanation: `Collected all elements from buckets (${digitName} pass complete)`,
-        detailedExplanation: `We've now collected all elements from buckets 0-9 in order. After processing the ${digitName} digit, the array is partially sorted. ${digitPos < maxDigits - 1 ? `Next, we'll process the ${getDigitName(digitPos + 1)} digit.` : 'This was the last digit position!'}`,
+        detailedExplanation: `We've collected all elements from the buckets in order. The array is now sorted based on the ${digitName}.`,
       });
     }
 
@@ -133,10 +161,10 @@ export const useRadixSort = (initialArray: number[] = [170, 45, 75, 90, 802, 24,
       digitPosition: maxDigits - 1,
       digitName: 'complete',
       array: currentElements.map(el => ({ ...el, isActive: false })),
-      buckets: createEmptyBuckets(),
+      buckets: [],
       currentElementIndex: null,
       explanation: 'Sorting complete! 🎉',
-      detailedExplanation: `The array is now fully sorted! We processed ${maxDigits} digit position(s). Radix Sort's time complexity is O(d × n) where d is the number of digits and n is the number of elements.`,
+      detailedExplanation: `The array is now fully sorted! We processed ${maxDigits} positions.`,
     });
 
     return steps;

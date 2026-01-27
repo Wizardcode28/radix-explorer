@@ -11,8 +11,9 @@ interface ArrayBarProps {
 export const ArrayBar = ({ element, maxValue, index, totalCount }: ArrayBarProps) => {
   const minHeight = 30;
   const maxHeight = 180;
-  const height = Math.max(minHeight, (element.value / maxValue) * maxHeight);
-  
+  const val = typeof element.value === 'number' ? element.value : String(element.value).length * 10;
+  const height = Math.max(minHeight, (val / maxValue) * maxHeight);
+
   // Calculate width based on container and count
   const baseWidth = Math.max(30, Math.min(60, 400 / totalCount));
 
@@ -20,12 +21,12 @@ export const ArrayBar = ({ element, maxValue, index, totalCount }: ArrayBarProps
     <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
-      animate={{ 
-        opacity: 1, 
+      animate={{
+        opacity: 1,
         y: 0,
         scale: element.isActive ? 1.05 : 1,
       }}
-      transition={{ 
+      transition={{
         duration: 0.3,
         delay: index * 0.02,
       }}
@@ -33,29 +34,27 @@ export const ArrayBar = ({ element, maxValue, index, totalCount }: ArrayBarProps
       style={{ width: baseWidth }}
     >
       {/* Value label */}
-      <motion.span 
-        className={`font-mono text-xs font-medium transition-colors duration-200 ${
-          element.isActive ? 'text-accent' : 'text-foreground'
-        }`}
+      <motion.span
+        className={`font-mono text-xs font-medium transition-colors duration-200 ${element.isActive ? 'text-accent' : 'text-foreground'
+          }`}
         animate={{ scale: element.isActive ? 1.1 : 1 }}
       >
         {element.value}
       </motion.span>
-      
+
       {/* Bar */}
       <motion.div
-        className={`rounded-t-md transition-all duration-300 relative ${
-          element.isActive 
-            ? 'bg-bar-active shadow-glow animate-pulse-glow' 
+        className={`rounded-t-md transition-all duration-300 relative ${element.isActive
+            ? 'bg-bar-active shadow-glow animate-pulse-glow'
             : 'bg-bar'
-        }`}
-        style={{ 
+          }`}
+        style={{
           height,
           width: '100%',
         }}
         animate={{
-          backgroundColor: element.isActive 
-            ? 'hsl(var(--bar-active))' 
+          backgroundColor: element.isActive
+            ? 'hsl(var(--bar-active))'
             : 'hsl(var(--bar-default))',
         }}
       >

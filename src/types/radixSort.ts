@@ -1,12 +1,13 @@
 export interface ArrayElement {
-  value: number;
+  value: number | string;
   id: string;
   isActive: boolean;
-  currentDigit: number | null;
+  currentDigit: number | string | null;
 }
 
 export interface Bucket {
-  digit: number;
+  key: string | number;
+  label: string;
   elements: ArrayElement[];
 }
 
@@ -22,7 +23,7 @@ export interface SortStep {
 }
 
 export interface RadixSortState {
-  originalArray: number[];
+  originalArray: (number | string)[];
   currentArray: ArrayElement[];
   steps: SortStep[];
   currentStepIndex: number;
