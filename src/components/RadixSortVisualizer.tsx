@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 import { useRadixSort } from '@/hooks/useRadixSort';
 import { ArrayBar } from './ArrayBar';
 import { BucketContainer } from './BucketContainer';
@@ -21,6 +22,7 @@ export const RadixSortVisualizer = () => {
     reset,
     toggleAutoPlay,
     setSpeed,
+    setSortOrder,
   } = useRadixSort();
 
   const displayArray = currentStep?.array || state.currentArray;
@@ -69,7 +71,20 @@ export const RadixSortVisualizer = () => {
               canGoPrev={canGoPrev}
               isComplete={isComplete}
               speed={state.speed}
+              sortOrder={state.sortOrder}
+              onSortOrderChange={setSortOrder}
             />
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="w-full bg-orange-200"
+                onClick={() => window.open('/code', '_blank')}
+              >
+                View Pseudocode & C++ Code
+              </Button>
+            </div>
+
             <Legend />
           </div>
 

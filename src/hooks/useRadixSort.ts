@@ -58,11 +58,12 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
     isPlaying: false,
     speed: 1000,
     maxDigits: getMaxDigits(initialArray),
+    sortOrder: 'asc',
   }));
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const generateSteps = useCallback((arr: (number | string)[]): SortStep[] => {
+  const generateSteps = useCallback((arr: (number | string)[], order: 'asc' | 'desc'): SortStep[] => {
     const steps: SortStep[] = [];
     const maxDigits = getMaxDigits(arr);
     let currentElements = arr.map(createArrayElement);
@@ -77,7 +78,7 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
       buckets: [],
       currentElementIndex: null,
       explanation: 'Initial array ready for sorting',
-      detailedExplanation: `We have ${arr.length} items to sort. The maximum length is ${maxDigits}, so we'll process ${maxDigits} positions from right to left.`,
+      detailedExplanation: `We have ${arr.length} items to sort. The maximum length is ${maxDigits}, so we'll process ${maxDigits} positions from right to left.${order === 'desc' ? ' Sorting in descending order.' : ''}`,
     });
 
     for (let digitPos = 0; digitPos < maxDigits; digitPos++) {
@@ -86,6 +87,12 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
       // Determine unique keys for buckets at this position
       const currentDigits = currentElements.map(el => getDigit(el.value, digitPos, isStringMode));
       const uniqueDigits = Array.from(new Set(currentDigits)).sort();
+
+      // For descending sort during distribution phase, we still maintain bucket order based on digits
+      // But we will collect them in reverse order or use reverse bucket logic if we want to be explicit.
+      // Standard LSD Radix Sort for descending:
+      // Option A: Map digit d to (9-d) or similar inversion.
+      // Option B: Collect from buckets in reverse order (Standard way for simple digit-based logic).
 
       let buckets = createEmptyBuckets(uniqueDigits);
 
@@ -130,8 +137,11 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
       }
 
       // Collect phase - gather all elements from buckets
+      // If descending, we collect from buckets in reverse order
       const collectedElements: ArrayElement[] = [];
-      for (const bucket of buckets) {
+      const bucketsToCollect = order === 'asc' ? buckets : [...buckets].reverse();
+
+      for (const bucket of bucketsToCollect) {
         for (const el of bucket.elements) {
           collectedElements.push({
             ...el,
@@ -150,8 +160,8 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
         array: collectedElements.map(el => ({ ...el })),
         buckets: createEmptyBuckets(uniqueDigits), // Show empty buckets after collection
         currentElementIndex: null,
-        explanation: `Collected all elements from buckets (${digitName} pass complete)`,
-        detailedExplanation: `We've collected all elements from the buckets in order. The array is now sorted based on the ${digitName}.`,
+        explanation: `Collected elements from buckets ${order === 'desc' ? '(Reverse order for Descending)' : ''}`,
+        detailedExplanation: `We've collected all elements from the buckets in ${order === 'desc' ? 'reverse ' : ''}order. The array is now sorted based on the ${digitName}.`,
       });
     }
 
@@ -170,10 +180,20 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
     return steps;
   }, []);
 
+  const stopAutoPlay = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setState(prev => ({ ...prev, isPlaying: false }));
+  }, []);
+
   const setArray = useCallback((arr: number[]) => {
     stopAutoPlay();
-    const steps = generateSteps(arr);
-    setState({
+    // Maintain current sort order when setting new array
+    const steps = generateSteps(arr, state.sortOrder || 'asc');
+    setState(prev => ({
+      ...prev,
       originalArray: arr,
       currentArray: arr.map(createArrayElement),
       steps,
@@ -181,12 +201,24 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
       isPlaying: false,
       speed: state.speed,
       maxDigits: getMaxDigits(arr),
-    });
-  }, [generateSteps, state.speed]);
+    }));
+  }, [generateSteps, state.speed, state.sortOrder, stopAutoPlay]);
+
+  const setSortOrder = useCallback((order: 'asc' | 'desc') => {
+    stopAutoPlay();
+    const steps = generateSteps(state.originalArray, order);
+    setState(prev => ({
+      ...prev,
+      sortOrder: order,
+      steps,
+      currentStepIndex: -1,
+      isPlaying: false,
+    }));
+  }, [generateSteps, state.originalArray, stopAutoPlay]);
 
   const start = useCallback(() => {
     if (state.steps.length === 0) {
-      const steps = generateSteps(state.originalArray);
+      const steps = generateSteps(state.originalArray, state.sortOrder || 'asc');
       setState(prev => ({
         ...prev,
         steps,
@@ -198,12 +230,12 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
         currentStepIndex: 0,
       }));
     }
-  }, [state.steps.length, state.originalArray, generateSteps]);
+  }, [state.steps.length, state.originalArray, generateSteps, state.sortOrder]);
 
   const nextStep = useCallback(() => {
     setState(prev => {
       if (prev.steps.length === 0) {
-        const steps = generateSteps(prev.originalArray);
+        const steps = generateSteps(prev.originalArray, prev.sortOrder || 'asc');
         return {
           ...prev,
           steps,
@@ -236,15 +268,7 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
       currentStepIndex: -1,
       isPlaying: false,
     }));
-  }, []);
-
-  const stopAutoPlay = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setState(prev => ({ ...prev, isPlaying: false }));
-  }, []);
+  }, [stopAutoPlay]);
 
   const toggleAutoPlay = useCallback(() => {
     if (state.isPlaying) {
@@ -306,6 +330,7 @@ export const useRadixSort = (initialArray: (number | string)[] = [170, 45, 75, 9
     canGoNext,
     canGoPrev,
     setArray,
+    setSortOrder,
     start,
     nextStep,
     prevStep,

@@ -30,4 +30,5 @@ export interface RadixSortState {
   isPlaying: boolean;
   speed: number; // milliseconds between steps
   maxDigits: number;
+  sortOrder?: 'asc' | 'desc';
 }

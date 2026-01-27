@@ -27,6 +27,8 @@ interface ControlPanelProps {
   canGoPrev: boolean;
   isComplete: boolean;
   speed: number;
+  sortOrder?: 'asc' | 'desc';
+  onSortOrderChange?: (order: 'asc' | 'desc') => void;
 }
 
 export const ControlPanel = ({
@@ -43,6 +45,8 @@ export const ControlPanel = ({
   canGoPrev,
   isComplete,
   speed,
+  sortOrder = 'asc',
+  onSortOrderChange,
 }: ControlPanelProps) => {
   const [inputValue, setInputValue] = useState('170, 45, 75, 90, 802, 24, 2, 66');
   const [error, setError] = useState('');
@@ -76,8 +80,8 @@ export const ControlPanel = ({
       } else {
         // Treat as strings
         const strArr = parts;
-        if (strArr.some(s => s.length > 4)) {
-          throw new Error('Strings must be 4 characters or less');
+        if (strArr.some(s => s.length > 15)) {
+          throw new Error('Strings must be 15 characters or less');
         }
         setError('');
         onSetArray(strArr as any); // Type assertion needed or update prop type
@@ -104,7 +108,7 @@ export const ControlPanel = ({
       // Generate random strings
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       const arr = Array.from({ length: count }, () => {
-        const len = Math.floor(Math.random() * 3) + 2; // 2-4 chars
+        const len = Math.floor(Math.random() * 5) + 2; // 2-6 chars for random
         return Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
       });
       const newValue = arr.join(', ');
@@ -135,7 +139,7 @@ export const ControlPanel = ({
             id="array-input"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Enter numbers separated by commas"
+            placeholder="Enter numbers or strings separated by commas"
             className="font-mono text-sm"
           />
         </div>
@@ -160,6 +164,25 @@ export const ControlPanel = ({
             <Shuffle className="w-4 h-4 mr-1" />
             Random
           </Button>
+        </div>
+      </div>
+
+      {/* Sort Order */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Sort Order</Label>
+        <div className="flex bg-muted p-1 rounded-md">
+          <button
+            className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-sm transition-all ${sortOrder === 'asc' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => onSortOrderChange && onSortOrderChange('asc')}
+          >
+            Ascending
+          </button>
+          <button
+            className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-sm transition-all ${sortOrder === 'desc' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+            onClick={() => onSortOrderChange && onSortOrderChange('desc')}
+          >
+            Descending
+          </button>
         </div>
       </div>
 
@@ -258,7 +281,8 @@ export const ControlPanel = ({
       <div className="bg-muted/50 rounded-lg p-3 space-y-2">
         <h3 className="text-sm font-medium text-foreground">Quick Guide</h3>
         <ul className="text-xs text-muted-foreground space-y-1">
-          <li>• Enter non-negative integers separated by commas</li>
+          <li>• Enter non-negative integers or strings separated by commas</li>
+          <li>• Max string length: 15 characters</li>
           <li>• Use "Start" to begin step-by-step visualization</li>
           <li>• "Auto Play" animates through all steps</li>
           <li>• Adjust speed slider for faster/slower animation</li>
