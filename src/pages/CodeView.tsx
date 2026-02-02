@@ -25,34 +25,39 @@ const CodeView = () => {
                         className="bg-card border border-border rounded-xl overflow-hidden shadow-sm"
                     >
                         <div className="bg-muted px-4 py-3 border-b border-border">
-                            <h2 className="font-semibold text-sm">Pseudocode (LSD String Sort)</h2>
+                            <h2 className="font-semibold text-sm">Pseudocode</h2>
                         </div>
                         <div className="p-4 overflow-x-auto">
                             <pre className="text-sm text-black leading-relaxed">
-                                {`function RadixSort(arr, maxLen):
-    // Process from last character to first (LSD)
-    for position from maxLen-1 down to 0:
-        
-        // 1. Create buckets for each possible character
-        buckets = empty list of lists
-        
-        // 2. Distribute elements into buckets
-        for string in arr:
-            char = string[position]
-            add string to buckets[char]
-            
-        // 3. Collect elements back into array
-        arr = []
-        for bucket in buckets (in order):
-            arr.append(all elements in bucket)
-            
-    return arr
+                                {`RADIX_SORT(A):
+    maxVal = maximum element in A
+    exp = 1   // 1, 10, 100, ...
 
-// Notes:
-// - For numbers, use (number / 10^pos) % 10
-// - For descending order:
-//   Option A: Collect from buckets in reverse order
-//   Option B: Traverse buckets in reverse
+    while maxVal / exp > 0:
+        COUNTING_SORT_BY_DIGIT(A, exp)
+        exp = exp * 10
+
+COUNTING_SORT_BY_DIGIT(A, exp):
+    n = size of A
+    output[0..n-1]
+    count[0..9] = all zeros
+
+    // count digits
+    for i = 0 to n-1:
+        digit = (A[i] / exp) % 10
+        count[digit]++
+
+    // prefix sum
+    for d = 1 to 9:
+        count[d] += count[d-1]
+
+    // build output (RIGHT → LEFT for stability)
+    for i = n-1 down to 0:
+        digit = (A[i] / exp) % 10
+        output[count[digit] - 1] = A[i]
+        count[digit]--
+
+    copy output back to A
 `}
                             </pre>
                         </div>
@@ -69,82 +74,52 @@ const CodeView = () => {
                         </div>
                         <div className="p-4 overflow-x-auto bg-[#1e1e1e] text-[#d4d4d4]">
                             <pre className="text-xs md:text-sm leading-relaxed font-mono">
-                                {`#include <iostream>
-#include <vector>
-#include <string>
-#include <algorithm>
-
+                                {`#include <bits/stdc++.h>
 using namespace std;
 
-// Get character at position or logical padding
-int getChar(const string& s, int pos, int maxLen) {
-    // Logic handles varying string lengths
-    // effective index = s.length() - 1 - p
-    // but here we align right (LSD)
-    int index = s.length() - 1 - pos;
-    if (index < 0) return 0; // standard padding definition
-    return (unsigned char)s[index];
+void countingSortByDigit(vector<long long>& a, long long exp) {
+    int n = a.size();
+    vector<long long> output(n);
+    int count[10] = {0};
+
+    // Count digit occurrences
+    for (int i = 0; i < n; i++) {
+        int digit = (a[i] / exp) % 10;
+        count[digit]++;
+    }
+
+    // Prefix sum
+    for (int d = 1; d < 10; d++) {
+        count[d] += count[d - 1];
+    }
+
+    // Build output (right to left → stable)
+    for (int i = n - 1; i >= 0; i--) {
+        int digit = (a[i] / exp) % 10;
+        output[count[digit] - 1] = a[i];
+        count[digit]--;
+    }
+
+    // Copy back
+    a = output;
 }
 
-void countSort(vector<string>& arr, int pos, int maxLen, bool asc) {
-    vector<string> output(arr.size());
-    int count[256] = {0};
-    
-    // Store count of occurrences
-    for (const string& s : arr) {
-        count[getChar(s, pos, maxLen)]++;
-    }
-    
-    // Change count[i] so that count[i] now contains actual
-    // position of this character in output array
-    // DESCENDING: We can reverse accumulation or index mapping
-    if (asc) {
-        for (int i = 1; i < 256; i++)
-            count[i] += count[i - 1];
-    } else {
-        // For descending, accumulate from end or reverse
-        // Simple way: accum normal, then fill output reversed? 
-        // No, stable sort requirement means we adhere to bucket order
-        // Let's standard accumulate but we iterate buckets backwards later?
-        // Actually, easier to just adjust counts for reverse placement?
-        // Let's stick to standard LSD, collecting reverse order 
-        // is equivalent to traversing counts backwards?
-        // simpler for viz explanation: iterate buckets backwards.
-        // But for Counting Sort array impl:
-        for (int i = 254; i >= 0; i--)
-             count[i] += count[i + 1];
-    }
-    
-    // Build the output array
-    for (int i = arr.size() - 1; i >= 0; i--) {
-        int charIdx = getChar(arr[i], pos, maxLen);
-        output[count[charIdx] - 1] = arr[i];
-        count[charIdx]--;
-    }
-    
-    arr = output;
-}
+void radixSort(vector<long long>& a) {
+    long long maxVal = *max_element(a.begin(), a.end());
 
-void radixSort(vector<string>& arr, bool asc = true) {
-    if (arr.empty()) return;
-    
-    // Find max length
-    size_t maxLen = 0;
-    for (const auto& s : arr) maxLen = max(maxLen, s.length());
-    
-    // Do counting sort for every digit position
-    for (int pos = 0; pos < maxLen; pos++) {
-        countSort(arr, pos, maxLen, asc);
+    for (long long exp = 1; maxVal / exp > 0; exp *= 10) {
+        countingSortByDigit(a, exp);
     }
 }
 
 int main() {
-    vector<string> arr = {"apple", "banana", "grape", "app"};
-    radixSort(arr, true); // Ascending
-    
-    for (const auto& s : arr) cout << s << " ";
-    return 0;
-}`}
+    vector<long long> a = {170, 45, 75, 90, 802, 24, 2, 66};
+    radixSort(a);
+
+    for (long long x : a) cout << x << " ";
+    cout << endl;
+}
+`}
                             </pre>
                         </div>
                     </motion.div>
