@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 interface ControlPanelProps {
-  onSetArray: (arr: number[]) => void;
+  onSetArray: (arr: (number | string)[]) => void;
   onStart: () => void;
   onNextStep: () => void;
   onPrevStep: () => void;

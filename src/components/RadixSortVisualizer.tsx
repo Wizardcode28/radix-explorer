@@ -36,15 +36,15 @@ export const RadixSortVisualizer = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
+    <div className="bg-background px-4 pb-4 pt-0 md:px-6 md:pb-6 lg:px-8 lg:pb-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-6"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
             Radix Sort Visualizer
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
