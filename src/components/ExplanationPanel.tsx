@@ -9,11 +9,11 @@ interface ExplanationPanelProps {
   maxDigits: number;
 }
 
-export const ExplanationPanel = ({ 
-  currentStep, 
-  stepNumber, 
+export const ExplanationPanel = ({
+  currentStep,
+  stepNumber,
   totalSteps,
-  maxDigits 
+  maxDigits
 }: ExplanationPanelProps) => {
   if (!currentStep) {
     return (
@@ -99,8 +99,8 @@ export const ExplanationPanel = ({
           <div className="bg-primary/5 rounded-lg p-4 space-y-2 border border-primary/10">
             <h4 className="text-sm font-medium text-primary">About LSD Radix Sort</h4>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              LSD (Least Significant Digit) Radix Sort processes digits from right to left. 
-              It uses counting sort as a stable subroutine to distribute elements into buckets 
+              LSD (Least Significant Digit) Radix Sort processes digits from right to left.
+              It uses counting sort as a stable subroutine to distribute elements into buckets
               based on each digit position, then collects them in order.
             </p>
           </div>

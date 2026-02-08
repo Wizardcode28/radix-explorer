@@ -290,11 +290,14 @@ export const generateMergeSortSteps = (initialArray: ComparisonArrayElement[], o
             const valLeft = leftArr[i];
             const valRight = rightArr[j];
 
+            const currentIdxLeft = arr.indexOf(valLeft);
+            const currentIdxRight = arr.indexOf(valRight);
+
             const shouldPickLeft = order === 'asc' ? valLeft.value <= valRight.value : valLeft.value >= valRight.value;
 
             steps.push(createSnapshot(
                 arr,
-                Array.from({ length: end - start + 1 }, (_, idx) => start + idx),
+                [currentIdxLeft, currentIdxRight],
                 'comparing',
                 'compare',
                 `Comparing ${formatVal(valLeft.value)} (Left) and ${formatVal(valRight.value)} (Right)`,

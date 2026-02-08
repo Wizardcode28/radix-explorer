@@ -1,65 +1,58 @@
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { BarChart3, Binary } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
-export const AppSidebar = () => {
+export const Navbar = () => {
     const location = useLocation();
 
     const items = [
         {
             title: "Radix Sort",
             url: "/",
-            icon: Binary,
         },
         {
-            title: "Comparison Sorts",
+            title: "Comparison Sort",
             url: "/comparison",
-            icon: BarChart3,
         },
     ];
 
     return (
-        <Sidebar>
-            <SidebarHeader>
-                <div className="px-4 py-2">
-                    <h2 className="text-xl font-bold">Sort Visualizer</h2>
-                </div>
-            </SidebarHeader>
-            <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Algorithms</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
+        <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex h-16 items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        <Link to="/" className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                            Sort Visualizer
+                        </Link>
+                        <div className="hidden md:flex items-center gap-6">
                             {items.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                                        <Link to={item.url}>
-                                            <item.icon />
-                                            <span>{item.title}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
+                                <Link
+                                    key={item.title}
+                                    to={item.url}
+                                    className={cn(
+                                        "text-sm font-medium transition-colors hover:text-primary",
+                                        location.pathname === item.url
+                                            ? "text-foreground"
+                                            : "text-muted-foreground"
+                                    )}
+                                >
+                                    {item.title}
+                                </Link>
                             ))}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            </SidebarContent>
-        </Sidebar>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
     );
 };
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
     return (
-        <SidebarProvider>
-            <div className="min-h-screen flex w-full">
-                <AppSidebar />
-                <main className="flex-1 min-w-0 bg-background">
-                    <div className="p-4">
-                        <SidebarTrigger />
-                    </div>
-                    {children}
-                </main>
-            </div>
-        </SidebarProvider>
+        <div className="min-h-screen bg-background">
+            <Navbar />
+            <main className="container mx-auto pt-2 pb-6 px-4 md:px-6 lg:px-8">
+                {children}
+            </main>
+        </div>
     );
 };
