@@ -281,8 +281,10 @@ export const ControlPanel = ({
       <div className="bg-muted/50 rounded-lg p-3 space-y-2">
         <h3 className="text-sm font-medium text-foreground">Quick Guide</h3>
         <ul className="text-xs text-muted-foreground space-y-1">
-          <li>• Enter non-negative integers or strings separated by commas</li>
-          <li>• Max string length: 15 characters</li>
+          <li>• Enter integers or strings separated by commas</li>
+          <li>• Maximum 20 items allowed</li>
+          <li>• Numbers must be less than 10000</li>
+          <li>• Strings must be 15 characters or less</li>
           <li>• Use "Start" to begin step-by-step visualization</li>
           <li>• "Auto Play" animates through all steps</li>
           <li>• Adjust speed slider for faster/slower animation</li>
